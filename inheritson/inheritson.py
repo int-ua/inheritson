@@ -30,12 +30,12 @@ def fill(
         id_field: str = 'id',
         parent_id_field: str = 'parent_id',
         raise_orphans: bool = True,
+        preserve_order: bool = True,
         inheritance_function: Callable[[dict, dict], dict] = inherit) \
         -> List[dict]:
     '''
     Fill in values in children objects from ancestors chain
     by a reference field.
-    TODO: preserve order
 
     >>> fill([\
 {"id": "parent", "common": "value"},\
@@ -50,24 +50,29 @@ def fill(
     '''
     loaded = {}
     deferred = {}
+    if preserve_order:
+        order = []
 
     for entity in data:
-
+        assert isinstance(entity, dict)
         object_id = entity.get(id_field)
         parent_id = entity.get(parent_id_field)
 
+        if preserve_order:
+            order.append(object_id)
+
         if not parent_id:
             loaded[object_id] = entity
+            continue
+
+        if parent_id in loaded:
+            assert parent_id not in deferred
+
+            loaded[object_id] = \
+                inheritance_function(loaded[parent_id], entity)
 
         else:
-            if parent_id in loaded:
-                assert parent_id not in deferred
-
-                loaded[object_id] = \
-                    inheritance_function(loaded[parent_id], entity)
-
-            else:
-                deferred[object_id] = entity
+            deferred[object_id] = entity
 
     while deferred:
         # read `list` as "snapshot"
@@ -91,5 +96,8 @@ def fill(
                     else:
                         loaded[object_id] = entity
                         deferred.pop(object_id)
+
+    if preserve_order:
+        return [loaded[object_id] for object_id in order]
 
     return list(loaded.values())
