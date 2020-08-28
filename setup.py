@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="inheritson",
-    version="0.0.1",
+    version="0.0.2",
     author="Serhiy Zahoriya",
     author_email="serhiy.int@gmail.com",
     description="Fill in missing data that is inherited by a reference field "
